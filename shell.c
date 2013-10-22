@@ -2,11 +2,11 @@
 A simple REPL / shell for Unix, for CSE 7343 Project 5
 */
  
-#include <stdio.h>
-#include <stdlib.h> //abort()
-#include <string.h> //strcmp()
-#include <stdbool.h> // expands true as 1 and false as 0
-#include <unistd.h> //getlogin()
+#include <stdio.h>   //basic I/O
+#include <stdlib.h>  //abort()
+#include <string.h>  //strcmp(), strchr(), strlen()
+#include <stdbool.h> //expands true as 1 and false as 0
+#include <unistd.h>  //getlogin()
  
 #define EXIT 0
 #define TYPE 1
@@ -21,8 +21,8 @@ bool fileExist(char* filename);
 int cmdLength(char* command);
 int commandType(char* command);
 void type(char* filename);
-char* firstFileName(char* command);
-char* secondFileName(char* command);
+char* firstFileName(char* command, int cmdType);
+char* secondFileName(char* command, int cmdType);
 void copy(char* source, char* dest);
 void delete(char* filename);
 void execute(char* filename);
@@ -33,6 +33,9 @@ void execute(char* filename);
 ** delete <file>: deletes `file`
 ** attempt to execute a program if not one of the above commands
 */
+
+char* name;
+
 int main(int argc, char** argv) 
 {
   printf("Note: This is another shell!\n");
@@ -40,29 +43,60 @@ int main(int argc, char** argv)
   while (true) {
     memset(command, 0 , strlen(command) + 1);
     printf("%s> ", sysUsername());
-    //here has the risk of buffer overflow
-    scanf("%s", command);
+    //that is c style input include space
+    scanf("%[^\n]%*c", command);
+    printf("Command: %s\n", command);
+    
     switch(commandType(command))
     {
       //0 is Exit
       case 0:
         abort();
+
       //1 is type
       case 1:
+        //invalidate type
+        if(blankNum(command) != 1){
+          printf("try \'type <filename>\'\n");
+          break;
+        }
+        else
+        {
+          type(firstFileName(command, TYPE));
+          free(name);
+        }
         break;
+
       //2 is copy
       case 2:
+        //invalidate copy
+        if(blankNum(command) != 2){
+          printf("try \'copy <filename1> <filename2>\'\n");
+          break;
+        }
+        // free(name1);
+        // free(name2);
         break;
+
       //3 is delete
       case 3:
+        //invalidate delete
+        if(blankNum(command) != 1){
+          printf("try \'delete <filename>\'\n");
+          break;
+        }
+        // free(name1);
         break;
+
       //4 is execute
       case 4:
         break;
+
       //default is error
       default:
         error(command);
     }
+    
   }
   return 0;
 }
@@ -90,12 +124,23 @@ bool fileExist(char* filename)
   return 0;
 }
 
+int blankNum(char* command){
+  char *pch;
+  int i = 0;
+  pch = strchr(command, ' ');
+  while(pch != NULL){
+    i++;
+    pch = strchr(pch + 1, ' ');
+  }
+  return i;
+}
+
 int cmdLength(char* command)
 {
   char *pch;
   pch = strchr(command, ' ');
   if(pch != NULL)
-    return pch - command + 1;
+    return pch - command;
   else
     return strlen(command);
 }
@@ -104,25 +149,39 @@ int cmdLength(char* command)
 int commandType(char* command) 
 {
   //TODO
-  int const len = cmdLength(command);
-  char cmd[len];
-  strncpy(cmd, command, len);
-  if (!strncmp(cmd, "exit", 4))
+  // int const len = cmdLength(command);
+  // char cmd[len];
+  // strncpy(cmd, command, len);
+  if (!strcmp(command, "exit"))
     return EXIT;
-  else if (!strncmp(cmd, "copy", 4))
+  else if (!strncmp(command, "type", 4))
+    return TYPE;
+  else if (!strncmp(command, "copy", 4))
     return COPY;
-  else if (!strncmp(cmd, "delete", 6))
+  else if (!strncmp(command, "delete", 6))
     return DELETE;
-  else if (fileExist(cmd))
+  else if (fileExist(command))
     return EXECUTE;
   else
     return ERROR;
 }
  
 // Prints the contents of `filename` to stdout
+// Reference: stackoverflow
 void type(char* filename) 
 {
   // TODO
+  if(!fileExist(filename))
+    printf("%s doesn't exist \n", filename);
+  int c;
+  FILE *file;
+  file = fopen(filename, "r");
+  if (file) {
+      while ((c = getc(file)) != EOF)
+          putchar(c);
+      printf("\n");
+      fclose(file);
+  }
 }
  
 // Copies the bytes from `source` to `dest`
@@ -141,17 +200,38 @@ void execute(char* filename)
 {
   // TODO
 }
- 
+
 // Returns the second word in a command phrase
-char* firstFileName(char* command) 
+char* firstFileName(char* command, int cmdType) 
 {
   // TODO
-  return 0;
+  char *ptr = command + cmdLength(command) + 1;
+  printf("name_ptr: %s\n", ptr);
+  int nameLen;
+  char *pch;
+  if(cmdType == TYPE || cmdType == DELETE)
+    pch = strchr(ptr, '\0');
+  else
+    pch = strchr(ptr, ' ');
+  nameLen = pch - ptr;
+  name  = (char *)malloc(nameLen);
+  strncpy(name, ptr, nameLen);
+  printf("nameLen: %d\n", nameLen);
+  printf("name1: %s\n", name);
+  return name;
 }
  
 // Returns the third word in a command phrase
-char* secondFileName(char* command) 
+char* secondFileName(char* command, int cmdType) 
 {
   // TODO
-  return 0;
+  char *ptr, *pch;
+  ptr = strchr(command, ' ');
+  ptr = strchr(ptr + 1, ' ');
+  pch = strchr(ptr, '\0');
+  int nameLen = pch - ptr;
+  name  = (char *)malloc(nameLen);
+  strncpy(name, pch, nameLen);
+  printf("name2: %s\n", name);
+  return name;
 }
