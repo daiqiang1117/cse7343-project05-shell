@@ -7,6 +7,8 @@ A simple REPL / shell for Unix, for CSE 7343 Project 5
 #include <string.h>  //strcmp(), strchr(), strlen()
 #include <stdbool.h> //expands true as 1 and false as 0
 #include <unistd.h>  //getlogin(), access()
+#include <sys/wait.h>
+
  
 #define EXIT 0
 #define TYPE 1
@@ -45,11 +47,12 @@ int main(int argc, char** argv)
   printf("Note: This is another shell!\n");
   char command[100] = {0};
   while (true) {
+    //reset the command memory
     memset(command, 0 , strlen(command) + 1);
-    printf("%s> ", sysUsername());
+    //prompt the user name
+    printf("\n%s> ", sysUsername());
     //that is c style input include space
     scanf("%[^\n]%*c", command);
-    printf("Command: %s\n", command);
     
     switch(commandType(command))
     {
@@ -61,7 +64,7 @@ int main(int argc, char** argv)
       case 1:
         //invalidate type
         if(blankNum(command) != 1){
-          printf("try \'type <filename>\'\n");
+          printf("try \'type <filename>\'");
           break;
         }
         else
@@ -75,7 +78,7 @@ int main(int argc, char** argv)
       case 2:
         //invalidate copy
         if(blankNum(command) != 2){
-          printf("try \'copy <filename1> <filename2>\'\n");
+          printf("try \'copy <filename1> <filename2>\'");
           break;
         }
         else{
@@ -89,7 +92,7 @@ int main(int argc, char** argv)
       case 3:
         //invalidate delete
         if(blankNum(command) != 1){
-          printf("try \'delete <filename>\'\n");
+          printf("try \'delete <filename>\'");
           break;
         }
         else
@@ -101,6 +104,7 @@ int main(int argc, char** argv)
 
       //4 is execute
       case 4:
+        execute(command);
         break;
 
       //default is error
@@ -195,7 +199,7 @@ void type(char* filename)
     }
   }
   else
-    printf("File \'%s\' doesn't exist \n", filename);
+    printf("File \'%s\' doesn't exist", filename);
 }
  
 // Copies the bytes from `source` to `dest`
@@ -214,7 +218,7 @@ void copy(char* source, char* dest) {
     }
   }
   else
-    printf("Source file \'%s\' doesn't exist \n", source);
+    printf("Source file \'%s\' doesn't exist", source);
 }
  
 // Deletes a file named `filename`
@@ -224,16 +228,41 @@ void delete(char* filename)
   if(fileExist(filename))
   {
     if(remove(filename))
-      printf("Fail to delete file \'%s\'\n", filename);
+      printf("Fail to delete file \'%s\'", filename);
   }
   else
-    printf("File \'%s\' doesn't exist \n", filename);
+    printf("File \'%s\' doesn't exist", filename);
 }
  
 // Executes a program named `filename`
+//reference: www.cs.ecu.edu/karl/4630/sum01/example1.html
 void execute(char* filename) 
 {
   // TODO
+  char head[100] = "./";
+  char *args[] = {strcat(head, filename), NULL};
+  int childStatus;
+  pid_t childPid = fork();
+
+  //pid succeeded
+  if(childPid >= 0 )
+  {
+    if(childPid == 0){   
+      execvp(args[0], args);
+      exit(1);
+    }
+    //parent process
+    else{
+      wait(&childStatus);
+    }  
+  }
+
+  //pid failure
+  else{
+    printf("Fail to create fork");
+    perror("fork");
+    exit(0);
+  }
 }
 
 // Returns the second word in a command phrase
