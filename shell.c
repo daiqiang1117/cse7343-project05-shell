@@ -6,7 +6,7 @@ A simple REPL / shell for Unix, for CSE 7343 Project 5
 #include <stdlib.h>  //abort()
 #include <string.h>  //strcmp(), strchr(), strlen()
 #include <stdbool.h> //expands true as 1 and false as 0
-#include <unistd.h>  //getlogin()
+#include <unistd.h>  //getlogin(), access()
  
 #define EXIT 0
 #define TYPE 1
@@ -221,6 +221,13 @@ void copy(char* source, char* dest) {
 void delete(char* filename) 
 {
   // TODO
+  if(fileExist(filename))
+  {
+    if(remove(filename))
+      printf("Fail to delete file \'%s\'\n", filename);
+  }
+  else
+    printf("File \'%s\' doesn't exist \n", filename);
 }
  
 // Executes a program named `filename`
@@ -240,7 +247,7 @@ char* firstFileName(char* command, int cmdType)
     pch = strchr(ptr, '\0');
   else
     pch = strchr(ptr, ' ');
-  nameLen = pch - ptr;
+  nameLen = pch - ptr + 1;
   name1  = (char *)malloc(nameLen);
   strncpy(name1, ptr, nameLen);
   return name1;
@@ -254,7 +261,7 @@ char* secondFileName(char* command, int cmdType)
   ptr = strchr(command, ' ');
   ptr = strchr(ptr + 1, ' ');
   pch = strchr(++ptr , '\0');
-  int nameLen = pch - ptr ;
+  int nameLen = pch - ptr + 1;
   name2  = (char *)malloc(nameLen);
   strncpy(name2, ptr, nameLen);
   return name2;
