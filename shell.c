@@ -17,6 +17,8 @@ A simple REPL / shell for Unix, for CSE 7343 Project 5
  
 char* sysUsername();
 void error(char* command);
+bool fileExist(char* filename);
+int cmdLength(char* command);
 int commandType(char* command);
 void type(char* filename);
 char* firstFileName(char* command);
@@ -31,7 +33,8 @@ void execute(char* filename);
 ** delete <file>: deletes `file`
 ** attempt to execute a program if not one of the above commands
 */
-int main(int argc, char** argv) {
+int main(int argc, char** argv) 
+{
   printf("Note: This is another shell!\n");
   char command[100] = {0};
   while (true) {
@@ -67,26 +70,58 @@ int main(int argc, char** argv) {
 //return the current system username
 //this method should be update to use safer function
 //reference : http://linux.die.net/man/3/getlogin_r
-char* sysUsername() {
+char* sysUsername() 
+{
   return getlogin();
 }
  
 // Displays an error message on stdout
-void error(char* command) {
+void error(char* command) 
+{
   printf("Command not found: %s\n", command);
 }
- 
+
+
+//reference on stackoverflow
+bool fileExist(char* filename)
+{
+  if( access (filename, F_OK) != -1)
+    return 1;
+  return 0;
+}
+
+int cmdLength(char* command)
+{
+  char *pch;
+  pch = strchr(command, ' ');
+  if(pch != NULL)
+    return pch - command + 1;
+  else
+    return strlen(command);
+}
+
 // return the command type: 0 is exit, 1 is type, 2 is copy, 3 is delete, 4 is execute
-int commandType(char* command) {
+int commandType(char* command) 
+{
   //TODO
-  if (!strncmp(command, "exit", 4))
+  int const len = cmdLength(command);
+  char cmd[len];
+  strncpy(cmd, command, len);
+  if (!strncmp(cmd, "exit", 4))
     return EXIT;
+  else if (!strncmp(cmd, "copy", 4))
+    return COPY;
+  else if (!strncmp(cmd, "delete", 6))
+    return DELETE;
+  else if (fileExist(cmd))
+    return EXECUTE;
   else
     return ERROR;
 }
  
 // Prints the contents of `filename` to stdout
-void type(char* filename) {
+void type(char* filename) 
+{
   // TODO
 }
  
@@ -96,23 +131,27 @@ void copy(char* source, char* dest) {
 }
  
 // Deletes a file named `filename`
-void delete(char* filename) {
+void delete(char* filename) 
+{
   // TODO
 }
  
 // Executes a program named `filename`
-void execute(char* filename) {
+void execute(char* filename) 
+{
   // TODO
 }
  
 // Returns the second word in a command phrase
-char* firstFileName(char* command) {
+char* firstFileName(char* command) 
+{
   // TODO
   return 0;
 }
  
 // Returns the third word in a command phrase
-char* secondFileName(char* command) {
+char* secondFileName(char* command) 
+{
   // TODO
   return 0;
 }
