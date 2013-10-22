@@ -20,9 +20,10 @@ void error(char* command);
 bool fileExist(char* filename);
 int cmdLength(char* command);
 int commandType(char* command);
-void type(char* filename);
 char* firstFileName(char* command, int cmdType);
 char* secondFileName(char* command, int cmdType);
+
+void type(char* filename);
 void copy(char* source, char* dest);
 void delete(char* filename);
 void execute(char* filename);
@@ -34,7 +35,10 @@ void execute(char* filename);
 ** attempt to execute a program if not one of the above commands
 */
 
-char* name;
+//to store first file name on heap
+char* name1;
+//to store second file name on heap
+char* name2;
 
 int main(int argc, char** argv) 
 {
@@ -63,7 +67,7 @@ int main(int argc, char** argv)
         else
         {
           type(firstFileName(command, TYPE));
-          free(name);
+          free(name1);
         }
         break;
 
@@ -74,8 +78,11 @@ int main(int argc, char** argv)
           printf("try \'copy <filename1> <filename2>\'\n");
           break;
         }
-        // free(name1);
-        // free(name2);
+        else{
+          copy(firstFileName(command, COPY), secondFileName(command, COPY));
+          free(name1);
+          free(name2);
+        }
         break;
 
       //3 is delete
@@ -85,7 +92,11 @@ int main(int argc, char** argv)
           printf("try \'delete <filename>\'\n");
           break;
         }
-        // free(name1);
+        else
+        {
+          delete(firstFileName(command, TYPE));
+          free(name1);
+        }
         break;
 
       //4 is execute
@@ -171,22 +182,39 @@ int commandType(char* command)
 void type(char* filename) 
 {
   // TODO
-  if(!fileExist(filename))
-    printf("%s doesn't exist \n", filename);
-  int c;
-  FILE *file;
-  file = fopen(filename, "r");
-  if (file) {
+  if(fileExist(filename))
+  {
+    int c;
+    FILE *file;
+    file = fopen(filename, "r");
+    if (file) {
       while ((c = getc(file)) != EOF)
-          putchar(c);
+        putchar(c);
       printf("\n");
       fclose(file);
+    }
   }
+  else
+    printf("File \'%s\' doesn't exist \n", filename);
 }
  
 // Copies the bytes from `source` to `dest`
 void copy(char* source, char* dest) {
   // TODO
+  if(fileExist(source)){
+    int c;
+    FILE *fs, *fd;
+    fs = fopen(source, "r");
+    fd = fopen(dest, "w");
+    if (fs && fd) {
+      while ((c = getc(fs)) != EOF)
+        putc(c, fd);
+      fclose(fs);
+      fclose(fd);
+    }
+  }
+  else
+    printf("Source file \'%s\' doesn't exist \n", source);
 }
  
 // Deletes a file named `filename`
@@ -206,7 +234,6 @@ char* firstFileName(char* command, int cmdType)
 {
   // TODO
   char *ptr = command + cmdLength(command) + 1;
-  printf("name_ptr: %s\n", ptr);
   int nameLen;
   char *pch;
   if(cmdType == TYPE || cmdType == DELETE)
@@ -214,11 +241,9 @@ char* firstFileName(char* command, int cmdType)
   else
     pch = strchr(ptr, ' ');
   nameLen = pch - ptr;
-  name  = (char *)malloc(nameLen);
-  strncpy(name, ptr, nameLen);
-  printf("nameLen: %d\n", nameLen);
-  printf("name1: %s\n", name);
-  return name;
+  name1  = (char *)malloc(nameLen);
+  strncpy(name1, ptr, nameLen);
+  return name1;
 }
  
 // Returns the third word in a command phrase
@@ -228,10 +253,9 @@ char* secondFileName(char* command, int cmdType)
   char *ptr, *pch;
   ptr = strchr(command, ' ');
   ptr = strchr(ptr + 1, ' ');
-  pch = strchr(ptr, '\0');
-  int nameLen = pch - ptr;
-  name  = (char *)malloc(nameLen);
-  strncpy(name, pch, nameLen);
-  printf("name2: %s\n", name);
-  return name;
+  pch = strchr(++ptr , '\0');
+  int nameLen = pch - ptr ;
+  name2  = (char *)malloc(nameLen);
+  strncpy(name2, ptr, nameLen);
+  return name2;
 }
